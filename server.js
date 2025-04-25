@@ -87,14 +87,14 @@ app.get('/mongodb/testar-conexao', async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               nome:
  *                 type: string
  *                 description: Nome do usuário
  *               email:
  *                 type: string
  *                 description: Email do usuário
  *             required:
- *               - name
+ *               - nome
  *               - email
  *     responses:
  *       201:
@@ -107,7 +107,7 @@ app.get('/mongodb/testar-conexao', async (req, res) => {
  *                 _id:
  *                   type: string
  *                   description: ID do usuário
- *                 name:
+ *                 nome:
  *                   type: string
  *                 email:
  *                   type: string
@@ -405,13 +405,28 @@ app.get('/buckets/:bucketName', async (req, res) => {
  *         description: Arquivo enviado com sucesso
  */
 //Utilizar alguma lib para fazer o upload/strem de arquivos, sugestão: multer
-app.post('/buckets/:bucketName/upload', async (req, res) => {
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() });
+
+app.post('/buckets/:bucketName/upload', upload.single('file'), async (req, res) => {
+    const { bucketName } = req.params;
+
+    const params = {
+        Bucket: bucketName,
+        Key: req.file.originalname,
+        Body: req.file.buffer,
+    };
+
     try {
-        logInfo('Upload efetuado', req, data.Buckets);
+        const data = await s3.upload(params).promise();
+        logInfo('Upload efetuado', req, data);
+        res.status(200).json({ message: 'Upload realizado com sucesso', data });
     } catch (error) {
         logError("Erro ao efetuar upload", req, error);
+        res.status(500).json({ error: 'Erro ao fazer upload', details: error });
     }
 });
+
 
 /**
  * @swagger
