@@ -408,8 +408,9 @@ app.get('/buckets/:bucketName', async (req, res) => {
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 
-app.post('/buckets/:bucketName/upload', upload.single('file'), async (req, res) => {
-    const { bucketName } = req.params;
+app.post('/buckets/upload', upload.single('file'), async (req, res) => {
+
+    const bucketName = process.env.BUCKET_NAME;
 
     const params = {
         Bucket: bucketName,
@@ -448,8 +449,9 @@ app.post('/buckets/:bucketName/upload', upload.single('file'), async (req, res) 
  *       200:
  *         description: Arquivo deletado com sucesso
  */
-app.delete('/buckets/:bucketName/file/:fileName', async (req, res) => {
-    const { bucketName, fileName } = req.params;
+app.delete('/buckets/file/:fileName', async (req, res) => {
+    const { fileName } = req.params;
+    const bucketName = process.env.BUCKET_NAME;
 
     const params = {
         Bucket: bucketName,
