@@ -121,7 +121,7 @@ app.post('/usuarios', async (req, res) => {
         logInfo('Usuário criado', req);
         res.status(201).send(user);
     } catch (error) {
-        logError("Erro ao criar usuário", req, error);
+        logError("Erro ao criar usuário", req, error?.message || error.toString());
         res.status(500).send('Ocorreu um erro interno');
     }
 });
