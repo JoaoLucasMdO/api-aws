@@ -358,10 +358,19 @@ app.get('/buckets', async (req, res) => {
  *         name: bucketName
  *         required: true
  *         description: Nome do bucket
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Lista dos objetos do bucket
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/S3Object'
  */
+
 app.get('/buckets/:bucketName', async (req, res) => {
     const { bucketName } = req.params;
     const params = {
@@ -380,16 +389,11 @@ app.get('/buckets/:bucketName', async (req, res) => {
 
 /**
  * @swagger
- * /buckets/{bucketName}/upload:
+ * /buckets/upload:
  *   post:
  *     summary: Faz o upload de um arquivo para um bucket
  *     tags: 
  *       - Buckets
- *     parameters:
- *       - in: path
- *         name: bucketName
- *         required: true
- *         description: Nome do bucket
  *     requestBody:
  *       required: true
  *       content:
@@ -403,6 +407,15 @@ app.get('/buckets/:bucketName', async (req, res) => {
  *     responses:
  *       200:
  *         description: Arquivo enviado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
  */
 //Utilizar alguma lib para fazer o upload/strem de arquivos, sugestão: multer
 const multer = require('multer');
@@ -431,23 +444,30 @@ app.post('/buckets/upload', upload.single('file'), async (req, res) => {
 
 /**
  * @swagger
- * /buckets/{bucketName}/file/{fileName}:
+ * /buckets/file/{fileName}:
  *   delete:
  *     summary: Deleta um arquivo específico de um bucket
  *     tags: 
  *       - Buckets
  *     parameters:
  *       - in: path
- *         name: bucketName
- *         required: true
- *         description: Nome do bucket
- *       - in: path
  *         name: fileName
  *         required: true
  *         description: Nome do arquivo a ser deletado
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Arquivo deletado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       404:
+ *         description: Arquivo não encontrado no bucket
  */
 app.delete('/buckets/file/:fileName', async (req, res) => {
     const { fileName } = req.params;
