@@ -3,6 +3,8 @@ const express = require('express');
 const app = express();
 //BD
 const mongoose = require('mongoose');
+const mysql = require('mysql2/promise');
+
 //swagger
 const swaggerDocs = require('./swagger');
 //S3
@@ -488,6 +490,219 @@ app.delete('/buckets/file/:fileName', async (req, res) => {
             logError("Erro ao deletar arquivo do bucket", req, error);
             res.status(500).json({ error: 'Erro ao deletar o arquivo', details: error });
         }
+    }
+});
+//#endregion
+
+//#region MySQL
+// Conexão MySQL
+const mysqlPool = mysql.createPool({
+    host: process.env.CNN_MYSQL_DB_HOST.replace(/"/g, ''),
+    user: process.env.CNN_MYSQL_DB_USER.replace(/"/g, ''),
+    password: process.env.CNN_MYSQL_DB_PASSWORD.replace(/"/g, ''),
+    database: process.env.CNN_MYSQL_DB_NAME.replace(/"/g, ''),
+    port: process.env.CNN_MYSQL_DB_PORT.replace(/"/g, ''),
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Produto:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: ID do produto
+ *         nome:
+ *           type: string
+ *           description: Nome do produto
+ *         preco:
+ *           type: number
+ *           format: float
+ *           description: Preço do produto
+ *         estoque:
+ *           type: integer
+ *           description: Quantidade em estoque
+ */
+
+/**
+ * @swagger
+ * /produtos:
+ *   get:
+ *     tags:
+ *       - Produtos
+ *     summary: Listar todos os produtos
+ *     responses:
+ *       200:
+ *         description: Lista de produtos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Produto'
+ */
+app.get('/produtos', async (req, res) => {
+    try {
+        const [rows] = await mysqlPool.query('SELECT * FROM produtos');
+        res.json(rows);
+    } catch (error) {
+        logError("Erro ao buscar produtos", req, error?.message || error.toString());
+        res.status(500).send('Erro ao buscar produtos');
+    }
+});
+
+/**
+ * @swagger
+ * /produtos:
+ *   post:
+ *     tags:
+ *       - Produtos
+ *     summary: Criar um novo produto
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Produto'
+ *     responses:
+ *       201:
+ *         description: Produto criado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Produto'
+ */
+app.post('/produtos', async (req, res) => {
+    try {
+        const { nome, preco, estoque } = req.body;
+        const [result] = await mysqlPool.query(
+            'INSERT INTO produtos (nome, preco, estoque) VALUES (?, ?, ?)',
+            [nome, preco, estoque]
+        );
+        res.status(201).json({ id: result.insertId, nome, preco, estoque });
+    } catch (error) {
+        logError("Erro ao criar produto", req, error?.message || error.toString());
+        res.status(500).send('Erro ao criar produto');
+    }
+});
+
+/**
+ * @swagger
+ * /produtos/{id}:
+ *   get:
+ *     tags:
+ *       - Produtos
+ *     summary: Buscar produto por ID
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Produto encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Produto'
+ *       404:
+ *         description: Produto não encontrado
+ */
+app.get('/produtos/:id', async (req, res) => {
+    try {
+        const [rows] = await mysqlPool.query('SELECT * FROM produtos WHERE id = ?', [req.params.id]);
+        if (rows.length === 0) return res.status(404).send('Produto não encontrado');
+        res.json(rows[0]);
+    } catch (error) {
+        logError("Erro ao buscar produto", req, error?.message || error.toString());
+        res.status(500).send('Erro ao buscar produto');
+    }
+});
+
+/**
+ * @swagger
+ * /produtos/{id}:
+ *   put:
+ *     tags:
+ *       - Produtos
+ *     summary: Atualizar produto por ID
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Produto'
+ *     responses:
+ *       200:
+ *         description: Produto atualizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Produto'
+ *       404:
+ *         description: Produto não encontrado
+ */
+app.put('/produtos/:id', async (req, res) => {
+    try {
+        const { nome, preco, estoque } = req.body;
+        const [result] = await mysqlPool.query(
+            'UPDATE produtos SET nome = ?, preco = ?, estoque = ? WHERE id = ?',
+            [nome, preco, estoque, req.params.id]
+        );
+        if (result.affectedRows === 0) return res.status(404).send('Produto não encontrado');
+        res.json({ id: req.params.id, nome, preco, estoque });
+    } catch (error) {
+        logError("Erro ao atualizar produto", req, error?.message || error.toString());
+        res.status(500).send('Erro ao atualizar produto');
+    }
+});
+
+/**
+ * @swagger
+ * /produtos/{id}:
+ *   delete:
+ *     tags:
+ *       - Produtos
+ *     summary: Remover produto por ID
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Produto removido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       404:
+ *         description: Produto não encontrado
+ */
+app.delete('/produtos/:id', async (req, res) => {
+    try {
+        const [result] = await mysqlPool.query('DELETE FROM produtos WHERE id = ?', [req.params.id]);
+        if (result.affectedRows === 0) return res.status(404).send('Produto não encontrado');
+        res.json({ message: 'Produto removido' });
+    } catch (error) {
+        logError("Erro ao remover produto", req, error?.message || error.toString());
+        res.status(500).send('Erro ao remover produto');
     }
 });
 //#endregion

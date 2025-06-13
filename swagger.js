@@ -8,7 +8,21 @@ const options = {
             title: 'API AWS',
             version: '0.0.1',
             description: 'API de exemplo para integração com a AWS',
-        }
+        },
+        tags: [
+            {
+                name: 'CRUD MongoDb',
+                description: 'Operações de CRUD para usuários no MongoDb.'
+            },
+            {
+                name: 'Buckets',
+                description: 'Operações de Listar buckets, upload e remoção de arquivo para um bucket S3.'
+            },
+            {
+                name: 'Produtos',
+                description: 'Operações de CRUD para produtos no MySQL (RDS AWS).'
+            }
+        ]
     },
     apis: ['./server.js'],
 };
