@@ -549,6 +549,7 @@ const mysqlPool = mysql.createPool({
 app.get('/produtos', async (req, res) => {
     try {
         const [rows] = await mysqlPool.query('SELECT * FROM produtos');
+        logInfo('Produtos listados com sucesso', req, rows);
         res.json(rows);
     } catch (error) {
         logError("Erro ao buscar produtos", req, error?.message || error.toString());
@@ -584,7 +585,9 @@ app.post('/produtos', async (req, res) => {
             'INSERT INTO produtos (nome, preco, estoque) VALUES (?, ?, ?)',
             [nome, preco, estoque]
         );
-        res.status(201).json({ id: result.insertId, nome, preco, estoque });
+        const produtoCriado = { id: result.insertId, nome, preco, estoque };
+        logInfo('Produto criado com sucesso', req, produtoCriado);
+        res.status(201).json(produtoCriado);
     } catch (error) {
         logError("Erro ao criar produto", req, error?.message || error.toString());
         res.status(500).send('Erro ao criar produto');
@@ -618,6 +621,7 @@ app.get('/produtos/:id', async (req, res) => {
     try {
         const [rows] = await mysqlPool.query('SELECT * FROM produtos WHERE id = ?', [req.params.id]);
         if (rows.length === 0) return res.status(404).send('Produto não encontrado');
+        logInfo('Produto encontrado', req, rows[0]);
         res.json(rows[0]);
     } catch (error) {
         logError("Erro ao buscar produto", req, error?.message || error.toString());
@@ -662,7 +666,9 @@ app.put('/produtos/:id', async (req, res) => {
             [nome, preco, estoque, req.params.id]
         );
         if (result.affectedRows === 0) return res.status(404).send('Produto não encontrado');
-        res.json({ id: req.params.id, nome, preco, estoque });
+        const produtoAtualizado = { id: req.params.id, nome, preco, estoque };
+        logInfo('Produto atualizado com sucesso', req, produtoAtualizado);
+        res.json(produtoAtualizado);
     } catch (error) {
         logError("Erro ao atualizar produto", req, error?.message || error.toString());
         res.status(500).send('Erro ao atualizar produto');
@@ -699,6 +705,7 @@ app.delete('/produtos/:id', async (req, res) => {
     try {
         const [result] = await mysqlPool.query('DELETE FROM produtos WHERE id = ?', [req.params.id]);
         if (result.affectedRows === 0) return res.status(404).send('Produto não encontrado');
+        logInfo('Produto removido com sucesso', req, { id: req.params.id });
         res.json({ message: 'Produto removido' });
     } catch (error) {
         logError("Erro ao remover produto", req, error?.message || error.toString());
