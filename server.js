@@ -15,6 +15,12 @@ const { logInfo, logError } = require('./logger');
 
 app.use(express.json());
 
+const cors = require('cors');
+app.use(cors({
+    origin: 'http://dsm-vot-front-p2.duckdns.org', // ou use '*' para liberar para todos
+    credentials: true
+}));
+
 /**
 * @swagger
 * tags:
