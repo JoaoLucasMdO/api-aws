@@ -17,7 +17,7 @@ app.use(express.json());
 
 const cors = require('cors');
 app.use(cors({
-    origin: 'http://dsm-vot-front-p2.duckdns.org', // ou use '*' para liberar para todos
+    origin: ['http://dsm-vot-front-p2.duckdns.org','http://35.173.89.145'], // ou use '*' para liberar para todos
     credentials: true
 }));
 
