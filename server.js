@@ -719,4 +719,4 @@ app.delete('/produtos/:id', async (req, res) => {
 
 
 swaggerDocs(app);
-app.listen(3000, () => console.log('Servidor rodando na porta 3000'));
+app.listen(3000, '0.0.0.0', () => console.log('Servidor rodando na porta 3000'));
